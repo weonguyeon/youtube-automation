@@ -222,11 +222,66 @@ JSON 출력:
 - narration은 구조화된 정보 설명에 적합하게"""
 
 
+def _prompt_pattern_e(topic: str, fmt: VideoFormat, color_preset: ColorPreset) -> str:
+    spec = FORMAT_SPECS[fmt]
+    hook_type = random.choice(list(HOOK_TYPES.keys()))
+    hook_desc = HOOK_TYPES[hook_type]
+    tone = random.choice(TONES)
+    max_scenes = spec["max_scenes"]
+
+    return f"""{SYSTEM_PROMPT}
+
+주제: {topic}
+형식: 화이트보드 교육 영상 ({spec['resolution'][0]}x{spec['resolution'][1]}, {spec['duration_sec']}초)
+톤: {tone}
+Hook 유형: {hook_type} — {hook_desc}
+스타일: 화이트보드에 마커 펜으로 그린 느낌, 교육/설명 콘텐츠
+
+이 영상은 화이트보드 스타일입니다.
+각 씬은 마인드맵, 체크리스트, 플로우 다이어그램 중 하나의 레이아웃을 사용합니다.
+visual_prompt에 적합한 레이아웃 유형을 명시하세요.
+
+JSON 출력:
+{{
+  "pattern": "E",
+  "format": "{fmt.value}",
+  "color_preset": "{color_preset.value}",
+  "metadata": {{
+    "title": "유튜브 제목",
+    "description": "설명글",
+    "tags": [...]
+  }},
+  "scenes": [
+    {{
+      "scene_id": 1,
+      "scene_type": "hook",
+      "duration_sec": 3,
+      "narration": "내레이션 (교육적 톤)",
+      "subtitle": "자막 텍스트",
+      "visual_prompt": "whiteboard style, layout: mindmap/checklist/diagram, ..., no text",
+      "visual_note": "mindmap|checklist|diagram",
+      "transition": "fade|cut"
+    }}
+  ],
+  "audio": {{
+    "has_narration": true,
+    "voice_style": "narrative|calm",
+    "bgm_mood": "calm|lofi|ambient"
+  }}
+}}
+
+필수:
+- scenes {max_scenes}개 이내
+- 교육적이고 설명적인 내레이션
+- visual_note에 레이아웃 유형 명시"""
+
+
 PATTERN_PROMPTS = {
     Pattern.A_DATA_VIZ: _prompt_pattern_a,
     Pattern.B_TEXT_SHORTS: _prompt_pattern_b,
     Pattern.C_SILENT_INFOGRAPHIC: _prompt_pattern_c,
     Pattern.D_VECTOR_INFOGRAPHIC: _prompt_pattern_d,
+    Pattern.E_WHITEBOARD: _prompt_pattern_e,
 }
 
 

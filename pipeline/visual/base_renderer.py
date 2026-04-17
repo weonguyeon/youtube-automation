@@ -41,6 +41,9 @@ def get_renderer(pattern: Pattern) -> BaseRenderer:
     elif pattern == Pattern.D_VECTOR_INFOGRAPHIC:
         from pipeline.visual.vector_infographic import VectorInfographicRenderer
         return VectorInfographicRenderer()
+    elif pattern == Pattern.E_WHITEBOARD:
+        from pipeline.visual.whiteboard import WhiteboardRenderer
+        return WhiteboardRenderer()
     else:
         raise NotImplementedError(f"Pattern {pattern.value} 렌더러 미구현")
 
