@@ -48,7 +48,7 @@ class AudioMixer:
         result.bgm_path = self._select_bgm(script.audio.bgm_mood)
 
         if script.audio.has_narration:
-            # TTS 생성 (ElevenLabs)
+            # TTS 생성 (ElevenLabs → edge-tts 자동 폴백)
             result.voice_path = self._generate_tts(script, output_dir)
 
             if result.voice_path and result.voice_path.exists():
