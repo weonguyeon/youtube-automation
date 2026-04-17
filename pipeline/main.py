@@ -94,7 +94,8 @@ def cli():
     else:
         print("\n[ERROR] 에러 발생:")
         for err in result.errors:
-            print(f"   - {err}")
+            safe_err = err.encode("ascii", errors="replace").decode("ascii")
+            print(f"   - {safe_err}")
         sys.exit(1)
 
 

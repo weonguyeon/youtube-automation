@@ -49,7 +49,7 @@ class ScriptWriter:
             capture_output=True,
             text=True,
             encoding="utf-8",
-            timeout=120,
+            timeout=300,
             env=env,
         )
 

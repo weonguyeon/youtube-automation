@@ -38,6 +38,9 @@ def get_renderer(pattern: Pattern) -> BaseRenderer:
     elif pattern == Pattern.C_SILENT_INFOGRAPHIC:
         from pipeline.visual.silent_infographic import SilentInfographicRenderer
         return SilentInfographicRenderer()
+    elif pattern == Pattern.D_VECTOR_INFOGRAPHIC:
+        from pipeline.visual.vector_infographic import VectorInfographicRenderer
+        return VectorInfographicRenderer()
     else:
         raise NotImplementedError(f"Pattern {pattern.value} 렌더러 미구현")
 

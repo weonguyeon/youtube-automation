@@ -168,10 +168,65 @@ JSON 출력:
 - 글로벌 타겟 가능하도록 숫자/기호 중심"""
 
 
+def _prompt_pattern_d(topic: str, fmt: VideoFormat, color_preset: ColorPreset) -> str:
+    spec = FORMAT_SPECS[fmt]
+    hook_type = random.choice(list(HOOK_TYPES.keys()))
+    hook_desc = HOOK_TYPES[hook_type]
+    tone = random.choice(TONES)
+    max_scenes = spec["max_scenes"]
+
+    return f"""{SYSTEM_PROMPT}
+
+주제: {topic}
+형식: 벡터 인포그래픽 ({spec['resolution'][0]}x{spec['resolution'][1]}, {spec['duration_sec']}초)
+톤: {tone}
+Hook 유형: {hook_type} — {hook_desc}
+컬러 프리셋: {color_preset.value}
+
+이 영상은 벡터 인포그래픽 스타일입니다.
+각 씬은 타임라인, 비교(VS), 프로세스, 통계 그리드 중 하나의 레이아웃을 사용합니다.
+visual_prompt에 적합한 레이아웃 유형을 명시하세요.
+
+JSON 출력:
+{{
+  "pattern": "D",
+  "format": "{fmt.value}",
+  "color_preset": "{color_preset.value}",
+  "metadata": {{
+    "title": "유튜브 제목",
+    "description": "설명글",
+    "tags": [...]
+  }},
+  "scenes": [
+    {{
+      "scene_id": 1,
+      "scene_type": "hook",
+      "duration_sec": 3,
+      "narration": "내레이션 (TTS용)",
+      "subtitle": "자막 텍스트",
+      "visual_prompt": "layout: timeline/comparison/process/stats, ..., no text",
+      "visual_note": "timeline|comparison|process|stats",
+      "transition": "fade|cut|zoom_in"
+    }}
+  ],
+  "audio": {{
+    "has_narration": true,
+    "voice_style": "narrative|energetic|calm",
+    "bgm_mood": "epic|lofi|upbeat"
+  }}
+}}
+
+필수:
+- scenes {max_scenes}개 이내
+- 각 씬의 visual_note에 레이아웃 유형 명시 (timeline/comparison/process/stats)
+- narration은 구조화된 정보 설명에 적합하게"""
+
+
 PATTERN_PROMPTS = {
     Pattern.A_DATA_VIZ: _prompt_pattern_a,
     Pattern.B_TEXT_SHORTS: _prompt_pattern_b,
     Pattern.C_SILENT_INFOGRAPHIC: _prompt_pattern_c,
+    Pattern.D_VECTOR_INFOGRAPHIC: _prompt_pattern_d,
 }
 
 
