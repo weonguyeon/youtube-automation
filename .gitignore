@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Environment
+config/.env
+.env
+
+# Output (generated videos)
+output/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Ruff cache
+.ruff_cache/
+
+# OMC state (session-specific)
+.omc/state/
+
+# Whisper model cache
+*.pt

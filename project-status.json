@@ -1,0 +1,6 @@
+{
+  "title": "YouTube 자동화",
+  "description": "인포그래픽 기반 페이스리스 유튜브 영상 자동화 파이프라인",
+  "status": "in_progress",
+  "tags": ["Python", "FFmpeg", "AI", "자동화"]
+}
