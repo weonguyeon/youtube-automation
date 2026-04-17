@@ -1,16 +1,21 @@
 """Pattern B: 텍스트 인포그래픽 숏폼 렌더러
 
-각 씬별로: Flux AI 이미지 생성 → 실패 시 PIL 인포그래픽 카드 폴백
+이미지 소스 우선순위:
+1. Flux AI 이미지 생성 (API 키 필요)
+2. Pexels 무료 사진 검색 (visual_prompt 키워드 기반)
+3. 로컬 인포그래픽 카드 (PIL)
 """
 
 from __future__ import annotations
 
+import io
 import logging
+import re
 import time
 from pathlib import Path
 
 import requests
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 from pipeline.colors import ColorTheme, get_theme
 from pipeline.config import settings
@@ -56,17 +61,125 @@ class TextShortsRenderer(BaseRenderer):
     def _generate_scene_image(
         self, scene: Scene, theme: ColorTheme, w: int, h: int, output_path: Path
     ):
-        """씬별 이미지 생성: Flux API → 로컬 폴백"""
-        if scene.visual_prompt and settings.flux_api_key:
-            full_prompt = scene.visual_prompt + theme.visual_prompt_suffix
+        """씬별 이미지 생성: Flux → Pexels 사진 + 오버레이 → 로컬 카드"""
+        prompt = scene.visual_prompt or ""
+
+        # 1순위: Flux AI
+        if prompt and settings.flux_api_key:
+            full_prompt = prompt + theme.visual_prompt_suffix
             try:
                 self._generate_flux_image(full_prompt, w, h, output_path)
                 return
             except Exception as e:
-                logger.warning("Flux 이미지 생성 실패, 로컬 폴백: %s", e)
+                logger.warning("Flux 실패, Pexels 폴백: %s", e)
 
-        # 로컬 인포그래픽 카드 생성
+        # 2순위: Pexels 사진 + 반투명 오버레이 + 텍스트
+        if prompt:
+            try:
+                self._generate_pexels_card(scene, prompt, theme, w, h, output_path)
+                return
+            except Exception as e:
+                logger.warning("Pexels 실패, 로컬 카드 폴백: %s", e)
+
+        # 3순위: 로컬 인포그래픽 카드
         self._generate_infographic_card(scene, theme, w, h, output_path)
+
+    def _extract_keywords(self, visual_prompt: str) -> str:
+        """visual_prompt에서 Pexels 검색용 영어 키워드 추출"""
+        # "no text, no words" 등 제거
+        cleaned = re.sub(r"no\s+(text|words|letters|writing)[,.\s]*", "", visual_prompt, flags=re.IGNORECASE)
+        # "flat 2d", "infographic", "vector" 등 스타일 키워드 제거
+        cleaned = re.sub(r"(flat|2d|vector|infographic|illustration|style|scheme|background|color)[,.\s]*", "", cleaned, flags=re.IGNORECASE)
+        # 쉼표로 분리 후 첫 2~3개 의미 키워드
+        parts = [p.strip() for p in cleaned.split(",") if p.strip() and len(p.strip()) > 2]
+        keywords = " ".join(parts[:3])
+        return keywords or "abstract background"
+
+    def _generate_pexels_card(
+        self, scene: Scene, prompt: str, theme: ColorTheme, w: int, h: int, output_path: Path
+    ):
+        """Pexels 사진 검색 → 배경 + 반투명 오버레이 + 텍스트 카드"""
+        keywords = self._extract_keywords(prompt)
+
+        # Pexels API 검색
+        headers = {"Authorization": settings.pexels_api_key} if settings.pexels_api_key else {}
+        resp = requests.get(
+            "https://api.pexels.com/v1/search",
+            headers=headers,
+            params={
+                "query": keywords,
+                "orientation": "portrait" if h > w else "landscape",
+                "size": "medium",
+                "per_page": 5,
+            },
+            timeout=10,
+        )
+
+        if resp.status_code == 403 or not settings.pexels_api_key:
+            raise ValueError("PEXELS_API_KEY 미설정 또는 인증 실패")
+
+        resp.raise_for_status()
+        photos = resp.json().get("photos", [])
+        if not photos:
+            raise ValueError(f"Pexels 검색 결과 없음: {keywords}")
+
+        # 첫 번째 사진 다운로드 (portrait용 적합 크기)
+        import random
+        photo = random.choice(photos[:3])
+        img_url = photo["src"].get("portrait") or photo["src"]["large"]
+        img_resp = requests.get(img_url, timeout=15)
+        img_resp.raise_for_status()
+
+        # 이미지 로드 & 리사이즈
+        bg = Image.open(io.BytesIO(img_resp.content)).convert("RGB")
+        bg = bg.resize((w, h), Image.LANCZOS)
+
+        # 어둡게 처리 (텍스트 가독성)
+        enhancer = ImageEnhance.Brightness(bg)
+        bg = enhancer.enhance(0.4)
+
+        # 블러 약간 적용
+        bg = bg.filter(ImageFilter.GaussianBlur(radius=2))
+
+        draw = ImageDraw.Draw(bg)
+        subtitle = (scene.subtitle or "").replace("**", "")
+        cx = w // 2
+
+        # 반투명 카드 영역 (중앙)
+        card_margin = 60
+        card_top = h // 3
+        card_bottom = h * 2 // 3
+        # 반투명 사각형 (PIL은 직접 alpha 지원 안함 → overlay 방식)
+        overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        overlay_draw = ImageDraw.Draw(overlay)
+        accent_rgb = _hex_to_rgb(theme.accent)
+        overlay_draw.rounded_rectangle(
+            [card_margin, card_top, w - card_margin, card_bottom],
+            radius=24,
+            fill=(*_hex_to_rgb(theme.background), 180),
+            outline=(*accent_rgb, 220),
+            width=3,
+        )
+        bg = bg.convert("RGBA")
+        bg = Image.alpha_composite(bg, overlay)
+        bg = bg.convert("RGB")
+
+        draw = ImageDraw.Draw(bg)
+        font_title = _load_font(56)
+        font_small = _load_font(24)
+
+        # 중앙 자막 텍스트
+        _draw_centered_text(draw, subtitle, font_title, "#ffffff", cx, (card_top + card_bottom) // 2, w - card_margin * 2 - 40)
+
+        # 상단/하단 액센트 라인
+        draw.rectangle([0, 0, w, 4], fill=theme.accent)
+        draw.rectangle([0, h - 4, w, h], fill=theme.accent)
+
+        # 하단 출처
+        draw.text((card_margin, card_bottom + 20), f"Photo: pexels.com", fill="#888888", font=font_small)
+
+        bg.save(output_path, "PNG", quality=95)
+        logger.info("[Pexels] 배경 이미지: '%s' → %s", keywords, output_path.name)
 
     def _generate_flux_image(self, prompt: str, w: int, h: int, output_path: Path):
         """BFL Flux API로 이미지 생성"""

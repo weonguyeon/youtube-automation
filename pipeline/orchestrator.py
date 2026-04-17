@@ -1,11 +1,12 @@
 """VideoPipeline - 순수 Python 기반 영상 제작 오케스트레이터
 
 n8n 없이 Python 코드로 전체 파이프라인을 실행.
-각 Stage를 순차 실행하고, 에러 핸들링/로깅 담당.
+각 Stage를 순차 실행하고, 모니터링/유사도 검사/에러 핸들링 담당.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -15,6 +16,8 @@ from pipeline.config import OUTPUT_DIR, settings
 from pipeline.schema import ColorPreset, Pattern, RenderEngine, VideoFormat, VideoScript
 
 logger = logging.getLogger(__name__)
+
+MAX_SIMILARITY_RETRIES = 2  # 유사도 초과 시 최대 재생성 횟수
 
 
 @dataclass
@@ -79,7 +82,6 @@ class VideoPipeline:
     ) -> PipelineResult:
         """전체 파이프라인 실행"""
 
-        # 채널 브랜드 컬러 (미지정 시 설정에서 가져옴)
         if color_preset is None:
             color_preset = ColorPreset(settings.brand_color_preset)
 
@@ -88,40 +90,38 @@ class VideoPipeline:
         output_dir = OUTPUT_DIR / video_id
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        # 모니터링 시작
+        from pipeline.monitoring import PipelineMonitor
+        monitor = PipelineMonitor(video_id, topic, pattern.value, fmt.value)
+
         try:
-            # Stage 1: 대본 생성
-            logger.info("[Stage 1] 대본 생성: %s", topic)
-            script_gen = self._get_script_generator()
-            script = script_gen.generate(
-                topic=topic,
-                pattern=pattern,
-                fmt=fmt,
-                color_preset=color_preset,
-                csv_path=csv_path,
+            # Stage 1: 대본 생성 + 유사도 검사
+            monitor.start_stage("script_generation")
+            script = self._generate_script_with_filter(
+                topic, pattern, fmt, color_preset, csv_path
             )
-            # 대본 JSON 저장
-            import json
             script_path = output_dir / "script.json"
             script_path.write_text(
                 json.dumps(script.model_dump(mode="json"), ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
+            monitor.end_stage(success=True)
 
             # Stage 2: 오디오 생성
-            logger.info("[Stage 2] 오디오 생성")
+            monitor.start_stage("audio_generation")
             audio_gen = self._get_audio_generator()
             audio_result = audio_gen.generate(script, output_dir)
+            monitor.end_stage(success=True)
 
             # Stage 3: 시각 에셋 생성
-            if render_engine:
-                logger.info("[Stage 3] 시각 에셋 생성 (Engine: %s)", render_engine.value)
-            else:
-                logger.info("[Stage 3] 시각 에셋 생성 (Pattern %s)", pattern.value)
+            engine_label = render_engine.value if render_engine else f"Pattern {pattern.value}"
+            monitor.start_stage(f"visual_generation ({engine_label})")
             visual_gen = self._get_visual_generator(pattern, render_engine)
             visual_result = visual_gen.render(script, output_dir)
+            monitor.end_stage(success=True)
 
             # Stage 4: 조립 & 렌더링
-            logger.info("[Stage 4] 영상 조립")
+            monitor.start_stage("assembly")
             assembler = self._get_assembler()
             video_path = assembler.assemble(
                 script=script,
@@ -130,19 +130,62 @@ class VideoPipeline:
                 output_dir=output_dir,
             )
             result.video_path = video_path
+            monitor.end_stage(success=True)
 
             # Stage 5: 업로드 (선택)
             if upload:
-                logger.info("[Stage 5] YouTube 업로드")
+                monitor.start_stage("upload")
                 publisher = self._get_publisher()
                 url = publisher.upload(video_path, script.metadata)
                 result.upload_url = url
+                monitor.end_stage(success=True)
 
             result.success = True
+            monitor.finish(success=True)
             logger.info("파이프라인 완료: %s", video_path)
 
         except Exception as e:
             logger.error("파이프라인 에러: %s", e)
             result.errors.append(str(e))
+            if monitor._current_stage:
+                monitor.end_stage(success=False, error=str(e))
+            monitor.finish(success=False)
 
         return result
+
+    def _generate_script_with_filter(
+        self,
+        topic: str,
+        pattern: Pattern,
+        fmt: VideoFormat,
+        color_preset: ColorPreset,
+        csv_path: str | None,
+    ) -> VideoScript:
+        """대본 생성 + 유사도 검사 (초과 시 재생성)"""
+        from pipeline.ideation.quality_filter import check_similarity
+
+        script_gen = self._get_script_generator()
+
+        for attempt in range(MAX_SIMILARITY_RETRIES + 1):
+            logger.info("[Stage 1] 대본 생성: %s (시도 %d)", topic, attempt + 1)
+            script = script_gen.generate(
+                topic=topic,
+                pattern=pattern,
+                fmt=fmt,
+                color_preset=color_preset,
+                csv_path=csv_path,
+            )
+
+            # 유사도 검사
+            script_dict = script.model_dump(mode="json")
+            is_similar, similarity = check_similarity(script_dict)
+
+            if not is_similar:
+                return script
+
+            if attempt < MAX_SIMILARITY_RETRIES:
+                logger.warning("유사도 %.0f%% — 재생성 시도 (%d/%d)", similarity * 100, attempt + 1, MAX_SIMILARITY_RETRIES)
+            else:
+                logger.warning("유사도 %.0f%% — 최대 재시도 초과, 현재 대본 사용", similarity * 100)
+
+        return script

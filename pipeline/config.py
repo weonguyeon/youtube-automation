@@ -36,6 +36,7 @@ class Settings:
 
     # 이미지 생성
     flux_api_key: str = os.getenv("FLUX_API_KEY", "")
+    pexels_api_key: str = os.getenv("PEXELS_API_KEY", "")
 
     # FFmpeg
     ffmpeg_path: str = os.getenv("FFMPEG_PATH", "ffmpeg")
