@@ -60,35 +60,103 @@ class AIPipelineRenderer(BaseRenderer):
     def _generate_scene_image(
         self, scene: Scene, theme: ColorTheme, w: int, h: int, output_path: Path
     ):
-        """씬별 이미지 생성 (AI API 또는 로컬 폴백)"""
+        """씬별 이미지 생성 — 폴백 체인: Flux → Pexels → 로컬 카드"""
         prompt = scene.visual_prompt
         if prompt:
-            # 브랜드 컬러 스타일 접미사 추가
             full_prompt = prompt + theme.visual_prompt_suffix
+
+            # 1순위: Replicate (Flux)
             try:
                 self._generate_with_ai(full_prompt, w, h, output_path)
                 return
             except Exception as e:
-                logger.warning("AI 이미지 생성 실패, 로컬 폴백: %s", e)
+                logger.warning("Flux 실패: %s", e)
 
-        # 폴백: 브랜드 컬러 기반 로컬 인포그래픽 카드 생성
+            # 2순위: Pexels 스톡 이미지
+            try:
+                self._generate_with_pexels(prompt, w, h, output_path)
+                return
+            except Exception as e:
+                logger.warning("Pexels 실패: %s", e)
+
+        # 3순위: 로컬 인포그래픽 카드
         self._generate_local_card(scene, theme, w, h, output_path)
 
     def _generate_with_ai(self, prompt: str, w: int, h: int, output_path: Path):
-        """Flux/Leonardo AI API로 이미지 생성"""
+        """Replicate (Flux) API로 이미지 생성"""
         from pipeline.config import settings
 
         if not settings.flux_api_key:
             raise ValueError("FLUX_API_KEY 미설정")
 
-        # TODO: Flux API 연동
-        # import requests
-        # response = requests.post(
-        #     "https://api.bfl.ml/v1/flux-pro-1.1",
-        #     headers={"X-Key": settings.flux_api_key},
-        #     json={"prompt": prompt, "width": w, "height": h}
-        # )
-        raise NotImplementedError("Flux API 연동 대기 중")
+        import replicate
+        import requests
+
+        # Replicate Flux schnell (빠름) 또는 dev (고품질)
+        client = replicate.Client(api_token=settings.flux_api_key)
+
+        # 해상도를 Flux 지원 범위로 조정 (max 1440)
+        aspect = "9:16" if h > w else "16:9"
+
+        output = client.run(
+            "black-forest-labs/flux-schnell",
+            input={
+                "prompt": prompt,
+                "aspect_ratio": aspect,
+                "num_outputs": 1,
+                "output_format": "png",
+                "output_quality": 90,
+            },
+        )
+
+        # 결과 URL에서 이미지 다운로드
+        img_url = output[0] if isinstance(output, list) else str(output)
+        response = requests.get(str(img_url), timeout=60)
+        response.raise_for_status()
+
+        # 정확한 해상도로 리사이즈
+        from io import BytesIO
+        img = Image.open(BytesIO(response.content))
+        img = img.resize((w, h), Image.LANCZOS)
+        img.save(output_path, "PNG", quality=95)
+
+        logger.info("[Flux] AI 이미지 생성: %s", output_path.name)
+
+    def _generate_with_pexels(self, prompt: str, w: int, h: int, output_path: Path):
+        """Pexels 스톡 이미지 검색 + 다운로드"""
+        import requests
+        from io import BytesIO
+        from pipeline.config import settings
+
+        if not settings.pexels_api_key:
+            raise ValueError("PEXELS_API_KEY 미설정")
+
+        # 프롬프트에서 검색 키워드 추출 (영어 부분만)
+        keywords = prompt.split(",")[0].strip()
+
+        orientation = "portrait" if h > w else "landscape"
+        resp = requests.get(
+            "https://api.pexels.com/v1/search",
+            headers={"Authorization": settings.pexels_api_key},
+            params={"query": keywords, "per_page": 1, "orientation": orientation},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        if not data.get("photos"):
+            raise ValueError(f"Pexels 검색 결과 없음: {keywords}")
+
+        photo = data["photos"][0]
+        img_url = photo["src"]["original"]
+        img_resp = requests.get(img_url, timeout=60)
+        img_resp.raise_for_status()
+
+        img = Image.open(BytesIO(img_resp.content))
+        img = img.resize((w, h), Image.LANCZOS)
+        img.save(output_path, "PNG", quality=95)
+
+        logger.info("[Pexels] 스톡 이미지: %s → %s", keywords[:30], output_path.name)
 
     def _generate_local_card(
         self, scene: Scene, theme: ColorTheme, w: int, h: int, output_path: Path

@@ -1,0 +1,18 @@
+defaults:
+  pattern: B
+  format: S15
+  color_preset: midnight_navy
+  platforms: [youtube_shorts, tiktok, instagram_reels]
+
+jobs:
+  - topic: "커피가 뇌에 미치는 5가지 효과"
+  - topic: "AI가 바꾸는 2026년 직업의 미래"
+    color_preset: ocean_blue
+  - topic: "역사 What If — 알렉산더 대왕이 더 살았다면"
+    pattern: D
+    format: L3
+    platforms: [youtube_long]
+  - topic: "세계 GDP 순위 변화 1980-2025"
+    pattern: A
+    format: S15
+    csv_path: data/gdp.csv

@@ -43,13 +43,16 @@ class ScriptWriter:
     def _generate_cli(self, prompt: str) -> dict:
         """Claude CLI (MAX 토큰) 사용"""
         import os
-        env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+        # Claude Code 내부 중첩 호출 방지: 관련 env 제거
+        skip_keys = {"CLAUDECODE", "CLAUDE_CODE", "MCP_SERVERS"}
+        env = {k: v for k, v in os.environ.items() if k not in skip_keys}
+        env["PYTHONIOENCODING"] = "utf-8"
         result = subprocess.run(
             ["claude", "-p", prompt, "--output-format", "json"],
             capture_output=True,
             text=True,
             encoding="utf-8",
-            timeout=300,
+            timeout=600,
             env=env,
         )
 

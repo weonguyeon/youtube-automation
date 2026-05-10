@@ -99,6 +99,7 @@ class PipelineMonitor:
             self._current_stage.name, status, self._current_stage.duration_sec,
         )
         self._current_stage = None
+        self._save_report()  # 매 Stage 완료 시 중간 리포트 저장 (SSE 폴링용)
 
     def finish(self, success: bool = True):
         """파이프라인 종료 & 리포트 저장"""

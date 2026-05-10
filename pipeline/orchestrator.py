@@ -27,6 +27,7 @@ class PipelineResult:
     upload_url: str | None = None
     errors: list[str] = field(default_factory=list)
     success: bool = False
+    platform_exports: list[dict] = field(default_factory=list)
 
 
 class VideoPipeline:
@@ -79,6 +80,7 @@ class VideoPipeline:
         render_engine: RenderEngine | None = None,
         upload: bool = False,
         csv_path: str | None = None,
+        platforms: list[str] | None = None,
     ) -> PipelineResult:
         """전체 파이프라인 실행"""
 
@@ -130,9 +132,46 @@ class VideoPipeline:
                 output_dir=output_dir,
             )
             result.video_path = video_path
+
+            # 썸네일 자동 생성
+            from pipeline.assembly.thumbnail import ThumbnailGenerator
+            thumb_gen = ThumbnailGenerator()
+            thumb_gen.generate(script, visual_result.asset_paths, output_dir)
+
             monitor.end_stage(success=True)
 
-            # Stage 5: 업로드 (선택)
+            # Stage 5a: 멀티플랫폼 익스포트 (선택)
+            if platforms:
+                monitor.start_stage("multiplatform_export")
+                from pipeline.publish.multiplatform import (
+                    MultiPlatformExporter,
+                    Platform,
+                )
+                exporter = MultiPlatformExporter(ffmpeg_path=settings.ffmpeg_path)
+                platform_enums = []
+                for p in platforms:
+                    try:
+                        platform_enums.append(Platform(p))
+                    except ValueError:
+                        logger.warning("알 수 없는 플랫폼 — 스킵: %s", p)
+                exports = exporter.export(
+                    source_video=video_path,
+                    platforms=platform_enums,
+                    output_dir=output_dir,
+                )
+                result.platform_exports = [
+                    {
+                        "platform": ex.platform.value,
+                        "path": str(ex.output_path),
+                        "width": ex.width,
+                        "height": ex.height,
+                        "duration_sec": ex.duration_sec,
+                    }
+                    for ex in exports
+                ]
+                monitor.end_stage(success=True)
+
+            # Stage 5b: 업로드 (선택)
             if upload:
                 monitor.start_stage("upload")
                 publisher = self._get_publisher()
@@ -184,7 +223,10 @@ class VideoPipeline:
                 return script
 
             if attempt < MAX_SIMILARITY_RETRIES:
-                logger.warning("유사도 %.0f%% — 재생성 시도 (%d/%d)", similarity * 100, attempt + 1, MAX_SIMILARITY_RETRIES)
+                logger.warning(
+                    "유사도 %.0f%% — 재생성 시도 (%d/%d)",
+                    similarity * 100, attempt + 1, MAX_SIMILARITY_RETRIES,
+                )
             else:
                 logger.warning("유사도 %.0f%% — 최대 재시도 초과, 현재 대본 사용", similarity * 100)
 

@@ -44,7 +44,13 @@ def cli():
         """,
     )
 
-    parser.add_argument("--topic", required=True, help="영상 주제")
+    parser.add_argument("--topic", default=None, help="영상 주제 (미지정 시 트렌드에서 자동 선택)")
+    parser.add_argument(
+        "--category",
+        choices=["data_comparison", "science_health", "ai_tech", "motivation", "history_whatif"],
+        default=None,
+        help="트렌드 카테고리 (--topic 미지정 시 사용)",
+    )
     parser.add_argument(
         "--pattern",
         choices=["A", "B", "C", "D", "E", "F"],
@@ -71,26 +77,61 @@ def cli():
     )
     parser.add_argument("--csv", help="CSV 데이터 파일 경로 (Pattern A용)")
     parser.add_argument("--upload", action="store_true", help="YouTube 자동 업로드")
+    parser.add_argument(
+        "--platforms",
+        default=None,
+        help="멀티플랫폼 익스포트 (콤마구분). e.g. youtube_shorts,tiktok,instagram_reels",
+    )
+    parser.add_argument(
+        "--batch",
+        default=None,
+        help="배치 작업 파일 경로 (.yaml/.yml/.json). 지정 시 배치 모드로 실행",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="상세 로그")
 
     args = parser.parse_args()
     setup_logging(args.verbose)
 
+    # 배치 모드
+    if args.batch:
+        from pipeline.batch import run_batch
+        summary = run_batch(args.batch)
+        print(f"\n[Batch] 완료 — 성공 {summary.success_count}/{summary.total}")
+        if summary.fail_count:
+            sys.exit(1)
+        return
+
+    # 주제 자동 선택
+    topic = args.topic
+    if not topic:
+        from pipeline.ideation.trend_collector import TrendCollector
+        collector = TrendCollector()
+        topics = collector.get_topics(category=args.category, count=1)
+        topic = topics[0]
+        print(f"[Auto] 트렌드 주제 선택: {topic}")
+
+    platforms = [p.strip() for p in args.platforms.split(",")] if args.platforms else None
+
     pipeline = VideoPipeline()
     result = pipeline.run(
-        topic=args.topic,
+        topic=topic,
         pattern=Pattern(args.pattern),
         fmt=VideoFormat(args.format),
         color_preset=ColorPreset(args.color) if args.color else None,
         render_engine=RenderEngine(args.engine) if args.engine else None,
         upload=args.upload,
         csv_path=args.csv,
+        platforms=platforms,
     )
 
     if result.success:
         print(f"\n[OK] 영상 생성 완료: {result.video_path}")
         if result.upload_url:
             print(f"[YouTube] {result.upload_url}")
+        if result.platform_exports:
+            print(f"[Multiplatform] {len(result.platform_exports)}개 플랫폼 익스포트:")
+            for ex in result.platform_exports:
+                print(f"   - {ex['platform']}: {ex['path']}")
     else:
         print("\n[ERROR] 에러 발생:")
         for err in result.errors:

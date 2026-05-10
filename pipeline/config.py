@@ -22,7 +22,8 @@ load_dotenv(CONFIG_DIR / ".env")
 class Settings:
     """전역 설정"""
 
-    # Claude CLI (개발) vs API (배포)
+    # Claude CLI (MAX 토큰) 강제 — API 키 절감 + 사용자 정책
+    # 환경변수로 명시적 override 안 한 경우 항상 cli
     deploy_mode: str = os.getenv("DEPLOY_MODE", "cli")  # "cli" or "api"
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
 
