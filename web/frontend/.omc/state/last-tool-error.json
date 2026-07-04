@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /c/Users/AIkuk/projects/youtube-automation && PYTHONIOENCODING=utf-8 PYTHONPATH=. python -c \\\"\\nfrom web.backend.app import app\\nfrom fastapi.testclient import TestClient\\nclient = Test...",
+  "error": "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 27, in <module>\r\n    r = client.post('/api/jobs/batch', json={\r\n        'defaults': {'topic': '_', 'pattern': 'B', 'format': 'S15'},\r\n        'jobs': [{'topic': 'smoke test 1'}],\r\n    })\r\n  File \"C:\\Users\\AIkuk\\AppData\\Roaming\\Python\\Python313\\site-packages\\starlette\\testclient.py\", line 546, in post\r\n    return super().post(\r\n           ~~~~~~~~~~~~^\r\n        url,\r\n        ^^^^\r\n    ...<10 lines>...\r\n        extensions=exte...",
+  "timestamp": "2026-05-10T13:56:38.919Z",
+  "retry_count": 1
+}

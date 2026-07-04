@@ -1,0 +1,399 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1778421319110,
+  "projectRoot": "C:\\Users\\AIkuk\\projects\\youtube-automation",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Python",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "pyproject.toml"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "fastapi",
+        "version": null,
+        "category": "backend"
+      },
+      {
+        "name": "pytest",
+        "version": null,
+        "category": "testing"
+      }
+    ],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": "pytest",
+    "lintCommand": "ruff check",
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "assets",
+      "docs",
+      "tests"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "assets": {
+      "path": "assets",
+      "purpose": "Static assets",
+      "fileCount": 0,
+      "lastAccessed": 1778421319099,
+      "keyFiles": []
+    },
+    "config": {
+      "path": "config",
+      "purpose": "Configuration files",
+      "fileCount": 3,
+      "lastAccessed": 1778421319100,
+      "keyFiles": [
+        "batch.example.yaml"
+      ]
+    },
+    "data": {
+      "path": "data",
+      "purpose": "Data files",
+      "fileCount": 2,
+      "lastAccessed": 1778421319100,
+      "keyFiles": [
+        "sample_gdp.csv",
+        "sample_kpop.csv"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 8,
+      "lastAccessed": 1778421319100,
+      "keyFiles": [
+        "architecture.md",
+        "direction.md",
+        "format-spec.md",
+        "mvp-spec.md",
+        "plan.md"
+      ]
+    },
+    "output": {
+      "path": "output",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1778421319101,
+      "keyFiles": [
+        "test_chart_race.mp4",
+        "test_raw.mp4",
+        "test_s15_kpop.mp4",
+        "test_s8_final.mp4"
+      ]
+    },
+    "pipeline": {
+      "path": "pipeline",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1778421319101,
+      "keyFiles": [
+        "batch.py",
+        "colors.py",
+        "config.py",
+        "main.py",
+        "monitoring.py"
+      ]
+    },
+    "templates": {
+      "path": "templates",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1778421319101,
+      "keyFiles": []
+    },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 1,
+      "lastAccessed": 1778421319101,
+      "keyFiles": [
+        "test_e2e_pipeline.py"
+      ]
+    },
+    "web": {
+      "path": "web",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1778421319102,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "web\\frontend\\src\\pages\\CreateVideo.tsx",
+      "accessCount": 17,
+      "lastAccessed": 1778420991348,
+      "type": "file"
+    },
+    {
+      "path": "web\\frontend\\src\\pages\\Dashboard.tsx",
+      "accessCount": 13,
+      "lastAccessed": 1778421965255,
+      "type": "file"
+    },
+    {
+      "path": "web\\frontend\\src\\pages\\Settings.tsx",
+      "accessCount": 12,
+      "lastAccessed": 1776752034045,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\orchestrator.py",
+      "accessCount": 12,
+      "lastAccessed": 1778420775410,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\visual\\engine_ai_pipeline.py",
+      "accessCount": 10,
+      "lastAccessed": 1776428301511,
+      "type": "file"
+    },
+    {
+      "path": "web\\frontend\\src\\App.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1778421039481,
+      "type": "file"
+    },
+    {
+      "path": "web\\frontend\\src\\pages\\VideoGallery.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1778421972020,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\main.py",
+      "accessCount": 9,
+      "lastAccessed": 1778420791905,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\ideation\\script_writer.py",
+      "accessCount": 9,
+      "lastAccessed": 1778421899645,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\assembly\\ffmpeg_renderer.py",
+      "accessCount": 8,
+      "lastAccessed": 1776408233305,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\audio\\audio_mixer.py",
+      "accessCount": 7,
+      "lastAccessed": 1776413667703,
+      "type": "file"
+    },
+    {
+      "path": "web\\frontend\\src\\components\\JobCard.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1778421947690,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\schema.py",
+      "accessCount": 5,
+      "lastAccessed": 1776414398703,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\visual\\base_renderer.py",
+      "accessCount": 4,
+      "lastAccessed": 1776417099330,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\ideation\\prompt_pool.py",
+      "accessCount": 4,
+      "lastAccessed": 1776417120624,
+      "type": "file"
+    },
+    {
+      "path": "tests\\test_e2e_pipeline.py",
+      "accessCount": 4,
+      "lastAccessed": 1776428374370,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\visual\\text_shorts.py",
+      "accessCount": 3,
+      "lastAccessed": 1776414464041,
+      "type": "file"
+    },
+    {
+      "path": "web\\backend\\app.py",
+      "accessCount": 3,
+      "lastAccessed": 1776751128148,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 3,
+      "lastAccessed": 1776751510089,
+      "type": "file"
+    },
+    {
+      "path": "web\\frontend\\src\\components\\StageProgress.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1776751792287,
+      "type": "file"
+    },
+    {
+      "path": "web\\backend\\models.py",
+      "accessCount": 3,
+      "lastAccessed": 1778420852962,
+      "type": "file"
+    },
+    {
+      "path": "web\\backend\\services\\job_manager.py",
+      "accessCount": 3,
+      "lastAccessed": 1778420897849,
+      "type": "file"
+    },
+    {
+      "path": "web\\frontend\\src\\lib\\api.ts",
+      "accessCount": 3,
+      "lastAccessed": 1778420966011,
+      "type": "file"
+    },
+    {
+      "path": "web\\backend\\routes\\videos.py",
+      "accessCount": 3,
+      "lastAccessed": 1778421868540,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\config.py",
+      "accessCount": 3,
+      "lastAccessed": 1778421957082,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\audio\\tts_engine.py",
+      "accessCount": 2,
+      "lastAccessed": 1776413659552,
+      "type": "file"
+    },
+    {
+      "path": "config\\.env.example",
+      "accessCount": 2,
+      "lastAccessed": 1776414409882,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\visual\\silent_infographic.py",
+      "accessCount": 2,
+      "lastAccessed": 1776415135039,
+      "type": "file"
+    },
+    {
+      "path": "web\\frontend\\src\\components\\Toast.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1776751761347,
+      "type": "file"
+    },
+    {
+      "path": "web\\backend\\routes\\jobs.py",
+      "accessCount": 2,
+      "lastAccessed": 1778420918219,
+      "type": "file"
+    },
+    {
+      "path": "web\\backend\\routes\\presets.py",
+      "accessCount": 2,
+      "lastAccessed": 1778421094467,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\ideation\\quality_filter.py",
+      "accessCount": 1,
+      "lastAccessed": 1776415152294,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\monitoring.py",
+      "accessCount": 1,
+      "lastAccessed": 1776415166161,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1776416348985,
+      "type": "directory"
+    },
+    {
+      "path": "pipeline\\visual\\vector_infographic.py",
+      "accessCount": 1,
+      "lastAccessed": 1776416426424,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\visual\\whiteboard.py",
+      "accessCount": 1,
+      "lastAccessed": 1776417091920,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\assembly\\thumbnail.py",
+      "accessCount": 1,
+      "lastAccessed": 1776428347770,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\ideation\\trend_collector.py",
+      "accessCount": 1,
+      "lastAccessed": 1776428455414,
+      "type": "file"
+    },
+    {
+      "path": "web\\backend\\routes\\settings.py",
+      "accessCount": 1,
+      "lastAccessed": 1776751118722,
+      "type": "file"
+    },
+    {
+      "path": "pipeline\\batch.py",
+      "accessCount": 1,
+      "lastAccessed": 1778420825159,
+      "type": "file"
+    },
+    {
+      "path": "config\\batch.example.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1778420837568,
+      "type": "file"
+    },
+    {
+      "path": "web\\frontend\\src\\pages\\BatchVideos.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778421024540,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
